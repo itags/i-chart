@@ -70,10 +70,16 @@ module.exports = function (window) {
                     content += '<section is="footer">'+model.footer+'</section>';
                 }
                 container.setHTML(content);
+                element.createSeries();
             },
 
             renderGraph: function() {
                 return '<p>i-chart cannot be used directly: you need a speudoClass</p>';
+            },
+
+            createSeries: function() {
+                // needs to be done AFTER the dom has the svg-area, because some types need to calculate its sizes
+                // in oder to be able to set the series at the right position
             }
 
         });
