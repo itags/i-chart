@@ -7,9 +7,30 @@ module.exports = function (window) {
         itagName = 'i-chart', // <-- define your own itag-name here
         DOCUMENT = window.document,
         ITSA = window.ITSA,
-        Itag;
+        AUTO_EXPAND_DELAY = 200,
+        SVG_HEIGHT = 5120, // 5*1024
+        charts = [],
+        Itag, autoExpandCharts, registerChart, unregisterChart;
 
     if (!window.ITAGS[itagName]) {
+
+        registerChart = function(iscroller) {
+            charts.push(iscroller);
+        };
+
+        unregisterChart = function(iscroller) {
+            charts.remove(iscroller);
+        };
+
+        autoExpandCharts = function() {
+            ITSA.later(function() {
+                var len = charts.length,
+                    i;
+                for (i=0; i<len; i++) {
+                    charts[i].fitSizes();
+                }
+            }, AUTO_EXPAND_DELAY, true);
+        };
 
         Itag = DOCUMENT.defineItag(itagName, {
             attrs: {
@@ -50,6 +71,9 @@ module.exports = function (window) {
                     var is = sectionNode.getAttr('is');
                     is && element.defineWhenUndefined(is, sectionNode.getHTML()); // sets element.model.someprop = somevalue; when not defined yet
                 });
+                element.itagReady().then(function() {
+                    registerChart(element);
+                });
             },
 
             render: function() {
@@ -65,11 +89,15 @@ module.exports = function (window) {
                 if (model.title) {
                     content += '<section is="title">'+model.title+'</section>';
                 }
-                content += '<section is="graph">'+element.renderGraph()+'</section>';
+                content += '<section is="chart">'+element.renderGraph()+'</section>';
                 if (model.footer) {
                     content += '<section is="footer">'+model.footer+'</section>';
                 }
                 container.setHTML(content);
+                if (!element.hasData('_firstSync')) {
+                    element.setData('_firstSync', true);
+                    element.fitSizes();
+                }
                 element.createSeries();
             },
 
@@ -80,10 +108,49 @@ module.exports = function (window) {
             createSeries: function() {
                 // needs to be done AFTER the dom has the svg-area, because some types need to calculate its sizes
                 // in oder to be able to set the series at the right position
+            },
+
+            getViewBoxWidth: function() {
+                var element = this,
+                    svgNode = element.getSVGNode();
+                return Math.round((svgNode.svgWidth/element.getSVGHeight())*element.getViewBoxHeight());
+            },
+
+            getViewBoxHeight: function() {
+                return SVG_HEIGHT;
+            },
+
+            getSVGHeight: function() {
+                var element = this,
+                    svgNode = element.getSVGNode();
+                return svgNode ? svgNode.svgHeight : 0;
+            },
+
+            getSVGNode: function () {
+                var element = this,
+                    svgNode;
+                if (!element.hasData('_svgNode')) {
+                    svgNode = element.getElement('svg');
+                    svgNode && (element.setData('_svgNode', svgNode));
+                }
+                return element.getData('_svgNode');
+            },
+
+            fitSizes: function() {
+console.warn(this.getSVGHeight());
+                var element = this,
+                    svgNode = element.getSVGNode();
+                svgNode && svgNode.setAttr('viewBox', '0 0 '+element.getViewBoxWidth()+' '+element.getViewBoxHeight());
+            },
+
+            destroy: function() {
+                var element = this;
+                unregisterChart(element);
             }
 
         });
 
+        autoExpandCharts();
         window.ITAGS[itagName] = Itag;
     }
 
