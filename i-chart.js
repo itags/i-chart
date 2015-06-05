@@ -137,10 +137,20 @@ module.exports = function (window) {
             },
 
             fitSizes: function() {
-console.warn(this.getSVGHeight());
                 var element = this,
-                    svgNode = element.getSVGNode();
-                svgNode && svgNode.setAttr('viewBox', '0 0 '+element.getViewBoxWidth()+' '+element.getViewBoxHeight());
+                    svgNode = element.getSVGNode(),
+                    height, sectionNode, parentNode;
+                if (svgNode) {
+                    svgNode.setAttr('viewBox', '0 0 '+element.getViewBoxWidth()+' '+element.getViewBoxHeight());
+                    // because svgNode.svgHeight returns falsy falues in some browsers (flexbox-issue), we need to calculate:
+                    height = element.innerHeight;
+                    sectionNode = element.getElement('section[is="title"]');
+                    sectionNode && (height-=sectionNode.height);
+                    sectionNode = element.getElement('section[is="footer"]');
+                    sectionNode && (height-=sectionNode.height);
+                    // now we specificly set the height on the svg-node:
+                    svgNode.setInlineStyle('height', height+'px');
+                }
             },
 
             destroy: function() {
