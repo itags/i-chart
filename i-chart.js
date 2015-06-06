@@ -8,6 +8,7 @@ module.exports = function (window) {
         DOCUMENT = window.document,
         ITSA = window.ITSA,
         AUTO_EXPAND_DELAY = 200,
+        SVG_WIDTH = 5120, // 5*1024
         SVG_HEIGHT = 5120, // 5*1024
         charts = [],
         Itag, autoExpandCharts, registerChart, unregisterChart;
@@ -96,6 +97,7 @@ module.exports = function (window) {
                 container.setHTML(content);
                 if (!element.hasData('_firstSync')) {
                     element.setData('_firstSync', true);
+                    element.setViewBox();
                     element.fitSizes();
                 }
                 element.createSeries();
@@ -111,9 +113,7 @@ module.exports = function (window) {
             },
 
             getViewBoxWidth: function() {
-                var element = this,
-                    svgNode = element.getSVGNode();
-                return Math.round((svgNode.svgWidth/element.getSVGHeight())*element.getViewBoxHeight());
+                return SVG_WIDTH;
             },
 
             getViewBoxHeight: function() {
@@ -136,20 +136,32 @@ module.exports = function (window) {
                 return element.getData('_svgNode');
             },
 
+            setViewBox: function() {
+                var element = this,
+                    svgNode = element.getSVGNode();
+                if (svgNode) {
+                    svgNode.setAttr('viewBox', '0 0 '+element.getViewBoxWidth()+' '+element.getViewBoxHeight());
+                    svgNode.setAttr('preserveAspectRatio', 'none');
+                }
+            },
+
             fitSizes: function() {
                 var element = this,
                     svgNode = element.getSVGNode(),
-                    height, sectionNode, parentNode;
+                    width, height, sectionNode, parentNode;
                 if (svgNode) {
-                    svgNode.setAttr('viewBox', '0 0 '+element.getViewBoxWidth()+' '+element.getViewBoxHeight());
                     // because svgNode.svgHeight returns falsy falues in some browsers (flexbox-issue), we need to calculate:
                     height = element.innerHeight;
+                    width =  element.innerWidth;
                     sectionNode = element.getElement('section[is="title"]');
                     sectionNode && (height-=sectionNode.height);
                     sectionNode = element.getElement('section[is="footer"]');
                     sectionNode && (height-=sectionNode.height);
                     // now we specificly set the height on the svg-node:
-                    svgNode.setInlineStyle('height', height+'px');
+                    svgNode.setInlineStyles([
+                        {property: 'width', value: width+'px'},
+                        {property: 'height', value: height+'px'}
+                    ]);
                 }
             },
 
