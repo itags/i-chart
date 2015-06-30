@@ -2,7 +2,7 @@
 
 // Added Marco:
 "maxstatements": 15,
-"maxdepth": 2,
+"maxdepth": 3,
 "maxcomplexity": 5,
 
 // Added: Satyam

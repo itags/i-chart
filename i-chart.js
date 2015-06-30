@@ -2,9 +2,9 @@ module.exports = function (window) {
     "use strict";
 
     require('./css/i-chart.css'); // <-- define your own itag-name here
+    require('itags.core')(window);
 
-    var itagCore = require('itags.core')(window),
-        itagName = 'i-chart', // <-- define your own itag-name here
+    var itagName = 'i-chart', // <-- define your own itag-name here
         DOCUMENT = window.document,
         ITSA = window.ITSA,
         AUTO_EXPAND_DELAY = 200,
@@ -49,14 +49,19 @@ module.exports = function (window) {
                     series;
 
                 if (!element.model.series) {
-                    // when initializing: make sure NOT to overrule model-properties that already
-                    // might have been defined when modeldata was bound. Therefore, use `defineWhenUndefined`
-                    try {
-                        series = JSON.parseWithDate(dataNode);
-                    }
-                    catch(err) {
-                        console.warn(err);
+                    if (dataNode.trim()==='') {
                         series = [];
+                    }
+                    else {
+                        // when initializing: make sure NOT to overrule model-properties that already
+                        // might have been defined when modeldata was bound. Therefore, use `defineWhenUndefined`
+                        try {
+                            series = JSON.parseWithDate(dataNode);
+                        }
+                        catch(err) {
+                            console.warn(err);
+                            series = [];
+                        }
                     }
                     element.defineWhenUndefined('series', series); // sets element.model.someprop = somevalue; when not defined yet
                 }
@@ -148,7 +153,7 @@ module.exports = function (window) {
             fitSizes: function() {
                 var element = this,
                     svgNode = element.getSVGNode(),
-                    width, height, sectionNode, parentNode;
+                    width, height, sectionNode;
                 if (svgNode) {
                     // because svgNode.svgHeight returns falsy falues in some browsers (flexbox-issue), we need to calculate:
                     height = element.innerHeight;
